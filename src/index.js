@@ -15,73 +15,73 @@ const __dirname = dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Configuración de CORS
+// CORS Configuration
 app.use(cors());
 app.use(express.json());
 
-// Configuración de Multer para manejar uploads
+// Multer configuration for file uploads
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
     fileSize: 10 * 1024 * 1024, // 10MB max
   },
   fileFilter: (req, file, cb) => {
-    // Aceptar solo imágenes
+    // Accept only images
     if (file.mimetype.startsWith('image/')) {
       cb(null, true);
     } else {
-      cb(new Error('Solo se permiten archivos de imagen'));
+      cb(new Error('Only image files are allowed'));
     }
   },
 });
 
-// Inicializar Gemini AI
+// Initialize Gemini AI
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // Health check endpoint
 app.get('/', (req, res) => {
   res.json({
     status: 'ok',
-    message: 'MemeDecoder API está funcionando',
+    message: 'MemeDecoder API is running',
     version: '1.0.0',
   });
 });
 
-// Endpoint para analizar memes
+// Endpoint to analyze memes
 app.post('/api/decode-meme', upload.single('meme'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({
-        error: 'No se proporcionó ninguna imagen',
+        error: 'No image provided',
       });
     }
 
-    // Verificar que existe la API key
+    // Verify API key exists
     if (!process.env.GEMINI_API_KEY) {
       return res.status(500).json({
-        error: 'API key de Gemini no configurada',
+        error: 'Gemini API key not configured',
       });
     }
 
-    // Convertir la imagen a base64
+    // Convert image to base64
     const imageBuffer = req.file.buffer;
     const base64Image = imageBuffer.toString('base64');
     const mimeType = req.file.mimetype;
 
-    // Configurar el modelo Gemini 2.5 Flash
+    // Configure Gemini 2.5 Flash model
     const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
 
-    // Crear el prompt para analizar el meme
-    const prompt = `Eres un experto en cultura de internet y memes. Analiza esta imagen de meme y proporciona:
+    // Create the prompt to analyze the meme
+    const prompt = `You are an expert in internet culture and memes. Analyze this meme image and provide:
 
-1. **Descripción del meme**: Describe qué elementos visuales ves en la imagen
-2. **Significado**: Explica el significado del meme, su contexto y por qué es gracioso
-3. **Origen**: Si conoces el origen o plantilla del meme, menciónalo
-4. **Uso común**: Explica en qué situaciones se suele usar este meme
+1. **Meme Description**: Describe what visual elements you see in the image
+2. **Meaning**: Explain the meaning of the meme, its context, and why it's funny
+3. **Origin**: If you know the origin or template of the meme, mention it
+4. **Common Usage**: Explain in what situations this meme is typically used
 
-Responde en español de manera clara, divertida y educativa.`;
+Respond in English in a clear, fun, and educational manner.`;
 
-    // Enviar la imagen a Gemini
+    // Send the image to Gemini
     const imagePart = {
       inlineData: {
         data: base64Image,
@@ -93,7 +93,7 @@ Responde en español de manera clara, divertida y educativa.`;
     const response = await result.response;
     const explanation = response.text();
 
-    // Responder con el análisis
+    // Respond with the analysis
     res.json({
       success: true,
       explanation: explanation,
@@ -104,33 +104,33 @@ Responde en español de manera clara, divertida y educativa.`;
       },
     });
   } catch (error) {
-    console.error('Error al procesar el meme:', error);
+    console.error('Error processing meme:', error);
 
     res.status(500).json({
-      error: 'Error al procesar el meme',
+      error: 'Error processing meme',
       details: error.message,
     });
   }
 });
 
-// Endpoint de prueba sin autenticación (para testing)
+// Test endpoint (for testing)
 app.get('/api/test', (req, res) => {
   res.json({
-    message: 'Endpoint de prueba funcionando',
+    message: 'Test endpoint working',
     geminiConfigured: !!process.env.GEMINI_API_KEY,
   });
 });
 
-// Manejo de errores de Multer
+// Multer error handling
 app.use((error, req, res, next) => {
   if (error instanceof multer.MulterError) {
     if (error.code === 'LIMIT_FILE_SIZE') {
       return res.status(400).json({
-        error: 'El archivo es demasiado grande. Máximo 10MB',
+        error: 'File is too large. Maximum 10MB',
       });
     }
     return res.status(400).json({
-      error: 'Error al subir el archivo',
+      error: 'Error uploading file',
       details: error.message,
     });
   }
@@ -144,10 +144,10 @@ app.use((error, req, res, next) => {
   next();
 });
 
-// Iniciar servidor
+// Start server
 app.listen(PORT, () => {
-  console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📍 Health check: http://localhost:${PORT}/`);
   console.log(`🎭 Decode endpoint: POST http://localhost:${PORT}/api/decode-meme`);
-  console.log(`🔑 Gemini API Key configurada: ${!!process.env.GEMINI_API_KEY ? '✅' : '❌'}`);
+  console.log(`🔑 Gemini API Key configured: ${!!process.env.GEMINI_API_KEY ? '✅' : '❌'}`);
 });
