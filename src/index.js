@@ -72,14 +72,12 @@ app.post('/api/decode-meme', upload.single('meme'), async (req, res) => {
     const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
 
     // Create the prompt to analyze the meme
-    const prompt = `You are an expert in internet culture and memes. Analyze this meme image and provide:
+    const prompt = `You are a meme expert. Analyze this meme and provide a brief, concise explanation (3-4 sentences max) covering:
+- What you see in the image
+- What it means and why it's funny
+- When it's typically used
 
-1. **Meme Description**: Describe what visual elements you see in the image
-2. **Meaning**: Explain the meaning of the meme, its context, and why it's funny
-3. **Origin**: If you know the origin or template of the meme, mention it
-4. **Common Usage**: Explain in what situations this meme is typically used
-
-Respond in English in a clear, fun, and educational manner.`;
+Keep it short, simple, and engaging. No bullet points or formatting.`;
 
     // Send the image to Gemini
     const imagePart = {
