@@ -72,12 +72,26 @@ app.post('/api/decode-meme', upload.single('meme'), async (req, res) => {
     const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
 
     // Create the prompt to analyze the meme
-    const prompt = `You are a meme expert. Analyze this meme and provide a brief, concise explanation (3-4 sentences max) covering:
-- What you see in the image
-- What it means and why it's funny
-- When it's typically used
+    const prompt = `You are a meme expert. Analyze this meme and provide a response in the following JSON format:
 
-Keep it short, simple, and engaging. No bullet points or formatting.`;
+{
+  "explanation": "Brief 3-4 sentence explanation of the meme",
+  "tags": ["tag1", "tag2", "tag3"],
+  "community": "Community or origin (e.g., Reddit, Twitter, 4chan, TikTok)",
+  "style": "Meme style/format (e.g., Image Macro, Reaction Image, Exploitable, Video Meme)",
+  "year": "Year it went viral (or null if unknown)",
+  "popularity": "low, medium, or high"
+}
+
+Rules:
+- explanation: 3-4 sentences, clear and engaging
+- tags: 3-5 relevant hashtags without the # symbol
+- community: The platform or community where it originated
+- style: The format/style of the meme
+- year: Just the year number, or null
+- popularity: Your assessment of how viral it became
+
+Return ONLY valid JSON, no additional text.`;
 
     // Send the image to Gemini
     const imagePart = {
@@ -89,12 +103,35 @@ Keep it short, simple, and engaging. No bullet points or formatting.`;
 
     const result = await model.generateContent([prompt, imagePart]);
     const response = await result.response;
-    const explanation = response.text();
+    const textResponse = response.text();
+
+    // Parse JSON response
+    let memeData;
+    try {
+      // Remove markdown code blocks if present
+      const cleanedResponse = textResponse.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      memeData = JSON.parse(cleanedResponse);
+    } catch (parseError) {
+      // Fallback if JSON parsing fails
+      memeData = {
+        explanation: textResponse,
+        tags: [],
+        community: 'Unknown',
+        style: 'Unknown',
+        year: null,
+        popularity: 'medium'
+      };
+    }
 
     // Respond with the analysis
     res.json({
       success: true,
-      explanation: explanation,
+      explanation: memeData.explanation,
+      tags: memeData.tags || [],
+      community: memeData.community || 'Unknown',
+      style: memeData.style || 'Unknown',
+      year: memeData.year,
+      popularity: memeData.popularity || 'medium',
       metadata: {
         filename: req.file.originalname,
         size: req.file.size,
