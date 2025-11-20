@@ -1,0 +1,21 @@
+{
+  "name": "memedecoder-backend",
+  "version": "1.0.0",
+  "description": "Backend API for MemeDecoder - AI-powered meme explanation service",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "keywords": ["meme", "ai", "gemini", "api", "decoder"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0",
+    "express": "^4.21.2",
+    "multer": "^1.4.5-lts.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7"
+  }
+}
